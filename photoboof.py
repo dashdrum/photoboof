@@ -72,7 +72,44 @@ def is_connected():
     return True
   except:
      pass
-  return False    
+  return False  
+
+def upload_montage(file_prefix):
+
+    led_on(upload_led)  ## LED 4 - uploading
+
+    connected = is_connected()
+    print 'Connected', connected
+    if connected:
+        print "Upload to Flickr"
+
+        flickr_authenticate()
+
+        try:
+            title = datetime(year=int(file_prefix[0:4]),month=int(file_prefix[4:6]),day=int(file_prefix[6:8]),hour=int(file_prefix[8:10]), minute=int(file_prefix[10:12])).strftime('%B %d, %Y %I:%M &p')
+        except:
+            title=file_prefix
+
+        start = datetime.now()
+
+        try:
+            flickr_upload(MONTAGE_PATH + file_prefix + "_grid.jpg",album=ALBUM,title=title)
+        except:
+            print 'Upload Failed'
+            break  ## Does this get me out of the if statement?
+
+        duration = datetime.now() - start
+
+        print "Upload time:", duration
+
+        mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
+        print mv_command
+        os.system(mv_command)
+
+    else:
+        print "No connection - will upload later"
+
+    led_off(upload_led)  
 
 def photo_process():
     camera = picamera.PiCamera()
@@ -119,31 +156,11 @@ def photo_process():
     os.system(graphicsmagick) #make the montage
     led_off(upload_led)
 
-    led_on(upload_led)  ## LED 4 - uploading
+    ## Upload Montage
 
-    connected = is_connected()
-    print connected
-    if connected:
-        print "Upload to Flickr"
+    upload_montage(file_prefix)
 
-        flickr_authenticate()
-
-        start = datetime.now()
-
-        flickr_upload(MONTAGE_PATH + file_prefix + "_grid.jpg",album=ALBUM,title='Tester')
-
-        duration = datetime.now() - start
-
-        print "Upload time:", duration
-
-        mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
-        print mv_command
-        os.system(mv_command)
-
-    else:
-        print "No connection - will upload later"
-
-    led_off(upload_led)
+    ## Blink LEDs to show complete
 
     for runcount in range(0,3):
 
