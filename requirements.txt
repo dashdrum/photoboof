@@ -1,0 +1,2 @@
+flickr-api==0.5
+picamera
