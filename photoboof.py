@@ -83,28 +83,33 @@ def upload_montage(file_prefix):
     if connected:
         print "Upload to Flickr"
 
-        flickr_authenticate()
-
         try:
-            title = datetime(year=int(file_prefix[0:4]),month=int(file_prefix[4:6]),day=int(file_prefix[6:8]),hour=int(file_prefix[8:10]), minute=int(file_prefix[10:12])).strftime('%B %d, %Y %I:%M &p')
-        except:
-            title=file_prefix
 
-        start = datetime.now()
+            flickr_authenticate()
 
-        try:
+            try:
+                title = datetime(year=int(file_prefix[0:4]),
+                                 month=int(file_prefix[4:6]),
+                                 day=int(file_prefix[6:8]),
+                                 hour=int(file_prefix[8:10]), 
+                                 minute=int(file_prefix[10:12])).strftime('%B %d, %Y %I:%M %p')
+            except:
+                title=file_prefix
+
+            start = datetime.now()
+
             flickr_upload(MONTAGE_PATH + file_prefix + "_grid.jpg",album=ALBUM,title=title)
+
+            duration = datetime.now() - start
+
+            print "Upload time:", duration
+
+            mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
+            print mv_command
+            os.system(mv_command)
         except:
             print 'Upload Failed'
-            break  ## Does this get me out of the if statement?
-
-        duration = datetime.now() - start
-
-        print "Upload time:", duration
-
-        mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
-        print mv_command
-        os.system(mv_command)
+            raise
 
     else:
         print "No connection - will upload later"
@@ -175,6 +180,26 @@ def photo_process():
 
     led_on(ready_led)
 
+def batch_upload():
+    jpg_count =0
+    jpg_list = []
+
+    print 'Checking for pending uploads'
+
+    for e in listdir(MONTAGE_PATH):
+        if e.endswith('jpg'):
+            jpg_count += 1
+            jpg_list.append(e[0:14])
+
+    print 'jpg count:', jpg_count
+    print 'jpg_list:', jpg_list
+
+    if jpg_count > 0:
+        print 'Uploading pending photos - please wait'
+
+        for j in jpg_list:
+            upload_montage(j)
+
 
 
 ALBUM = 'Test Album'
@@ -203,6 +228,10 @@ for i in range(0,led_count):
 GPIO.setup(btn_pin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 led_powerup_test()
+
+connected = is_connected()
+if connected:
+    batch_upload()
 
 print "Ready"
 led_on(ready_led)
