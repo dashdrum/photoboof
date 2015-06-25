@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-
+from os import listdir
 import os
 import time
 import picamera
@@ -37,25 +37,25 @@ def led_powerup_test():
             led_off(i)
         sleep(0.300)
 
-    for runcount in range(0,3):
+    # for runcount in range(0,3):
 
-        for i in range(0,led_count):  ## 0 to led_count-1
-            led_on(i)
-            sleep(0.100)
-            led_off(i)
-            sleep(0.100)
+    #     for i in range(0,led_count):  ## 0 to led_count-1
+    #         led_on(i)
+    #         sleep(0.100)
+    #         led_off(i)
+    #         sleep(0.100)
 
 
-    for runcount in range(0,3):
+    # for runcount in range(0,3):
 
-        for i in range(0,led_count):  ## 0 to led_count-1
-            led_on(i)
-            sleep(0.100)
-            led_off(i)
-        for i in range(led_count-1,-1,-1): ## led_count-1 to 0
-            led_on(i)
-            sleep(0.100)
-            led_off(i)
+    #     for i in range(0,led_count):  ## 0 to led_count-1
+    #         led_on(i)
+    #         sleep(0.100)
+    #         led_off(i)
+    #     for i in range(led_count-1,-1,-1): ## led_count-1 to 0
+    #         led_on(i)
+    #         sleep(0.100)
+    #         led_off(i)
 
     for runcount in range(0,3):
 
@@ -79,9 +79,8 @@ def upload_montage(file_prefix):
     led_on(upload_led)  ## LED 4 - uploading
 
     connected = is_connected()
-    print 'Connected', connected
     if connected:
-        print "Upload to Flickr"
+        # print "Upload to Flickr"
 
         try:
 
@@ -102,17 +101,16 @@ def upload_montage(file_prefix):
 
             duration = datetime.now() - start
 
-            print "Upload time:", duration
+            # print "Upload time:", duration
 
             mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
-            print mv_command
             os.system(mv_command)
         except:
-            print 'Upload Failed'
+            # print 'Upload Failed'
             raise
 
-    else:
-        print "No connection - will upload later"
+    # else:
+        # print "No connection - will upload later"
 
     led_off(upload_led)  
 
@@ -144,7 +142,7 @@ def photo_process():
             for i, filename in enumerate(camera.capture_continuous(FILE_PATH + file_prefix + '{counter:02d}.jpg', 
                                          format=None, use_video_port=False, resize=None, splitter_port=0)):
                 led_off(take_led)
-                print(filename)
+                # print(filename)
                 time.sleep(1)
                 if i == PHOTO_COUNT - 1:
                     break
@@ -154,7 +152,7 @@ def photo_process():
             camera.close()
 
     led_on(upload_led) ## LED 3 - Making montage
-    print "Making montages"
+    print "Making montage"
     # graphicsmagick = "gm convert -delay " + str(GIF_DELAY) + " -loop 0 " + FILE_PATH + file_prefix + "*.jpg " + FILE_PATH + file_prefix + ".gif"
     # os.system(graphicsmagick) #make the .gif
     graphicsmagick = "gm montage -tile 2x -geometry 640x480+5+5 " + FILE_PATH + file_prefix + "*.jpg " + MONTAGE_PATH + file_prefix + "_grid.jpg"
@@ -184,18 +182,19 @@ def batch_upload():
     jpg_count =0
     jpg_list = []
 
-    print 'Checking for pending uploads'
+    # print 'Checking for pending uploads'
 
     for e in listdir(MONTAGE_PATH):
         if e.endswith('jpg'):
             jpg_count += 1
             jpg_list.append(e[0:14])
 
-    print 'jpg count:', jpg_count
-    print 'jpg_list:', jpg_list
+    # print 'jpg count:', jpg_count
+    # print 'jpg_list:', jpg_list
 
     if jpg_count > 0:
-        print 'Uploading pending photos - please wait'
+        # print 'Uploading pending photos '
+        print 'Please wait'
 
         for j in jpg_list:
             upload_montage(j)
