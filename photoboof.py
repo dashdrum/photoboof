@@ -153,10 +153,23 @@ def photo_process():
 
     led_on(upload_led) ## LED 3 - Making montage
     print "Making montage"
-    # graphicsmagick = "gm convert -delay " + str(GIF_DELAY) + " -loop 0 " + FILE_PATH + file_prefix + "*.jpg " + FILE_PATH + file_prefix + ".gif"
-    # os.system(graphicsmagick) #make the .gif
-    graphicsmagick = "gm montage -tile 2x -geometry 640x480+5+5 " + FILE_PATH + file_prefix + "*.jpg " + MONTAGE_PATH + file_prefix + "_grid.jpg"
-    os.system(graphicsmagick) #make the montage
+
+    ## Make animated GIF
+    gm = "gm convert -delay " + str(GIF_DELAY) + " -loop 0 " + FILE_PATH + file_prefix + "*.jpg " + FILE_PATH + file_prefix + ".gif"
+    os.system(gm) #make the .gif
+
+    ## Make montage with text on the side
+    gm = "gm montage -tile 2x -geometry 640x480+5+5 " + FILE_PATH + file_prefix + "*.jpg " + MONTAGE_PATH + file_prefix + "_grid.jpg"
+    os.system(gm) #make the montage
+    gm ='gm convert -size 980x170 xc:#ffffff -pointsize 60 -font Arial -fill black -draw "text 30,105 \'' + EVENT + '\'" -pointsize 16 -draw "text 850,25 \'' + file_prefix + '\'" text.jpg'
+    os.system(gm) #create text box
+    gm = 'gm convert -rotate "270>" text.jpg text.jpg'
+    os.system(gm) # spin it
+    gm = 'gm montage -geometry x980+0  text.jpg -gravity west ' + MONTAGE_PATH + file_prefix + '_grid.jpg -gravity east  -resize x980 '+ MONTAGE_PATH + file_prefix + '_grid.jpg'
+    os.system(gm) # join text and grid
+    gm = 'gm convert ' + MONTAGE_PATH + file_prefix + '_grid.jpg -crop 1470x980+1131+0 ' + MONTAGE_PATH + file_prefix + '_grid.jpg'
+    os.system(gm)  # chop off the extra
+
     led_off(upload_led)
 
     ## Upload Montage
@@ -202,6 +215,7 @@ def batch_upload():
 
 
 ALBUM = 'Test Album'
+EVENT = 'Dawn-a-pa-Drew-za 2015'
 FILE_PATH = 'pics/'
 MONTAGE_PATH = FILE_PATH + 'montages/'
 UPLOADED_PATH = FILE_PATH + 'uploaded/'

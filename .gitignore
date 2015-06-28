@@ -126,6 +126,7 @@ vagrant/.vagrant
 
 flickr_keys.py
 auth_handler
+auth_handler.*
 *.jpg
 *.gif
 drumminhands/
