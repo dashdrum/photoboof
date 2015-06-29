@@ -124,6 +124,7 @@ def photo_process():
     #camera.hflip = True
     camera.saturation = 0
     camera.start_preview()
+    led_on(flash_led)
 
     ## Pose coundown
     print "Pose" 
@@ -155,6 +156,7 @@ def photo_process():
                 led_on(take_led)
                 # TODO: Superimpose i
         finally:
+            led_off(flash_led)
             camera.stop_preview()
             camera.close()
 
@@ -245,11 +247,12 @@ UPLOADED_PATH = FILE_PATH + 'uploaded/'
 GIF_DELAY = 50 
 PHOTO_COUNT = 4
 
-led_count = 4
+led_count = 5
 ready_led = 0
 pose_led = 1
 take_led = 2
 processing_led = 3
+flash_led = 4
 btn_pin = wP2board(5)
 
 # Power up
