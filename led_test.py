@@ -16,7 +16,7 @@ def led_off(wPpin):
 
 ## setup 
 
-led_count = 4
+led_count = 5
 btn_pin = wP2board(5)
 
 GPIO.setwarnings(False)
@@ -29,6 +29,11 @@ GPIO.setup(btn_pin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 ## led test
 def led_test():
+
+
+    for i in range(led_count-1,-1,-1): ## led_count-1 to 0
+        led_off(i)
+            
     for runcount in range(0,3):
 
         for i in range(0,led_count):  ## 0 to led_count-1
@@ -66,6 +71,9 @@ def led_test():
         for i in range(led_count-1,-1,-1): ## led_count-1 to 0
             led_off(i)
         sleep(0.300)
+
+    for i in range(0,led_count):  ## 0 to led_count-1
+            led_on(i)
 
 while True:
     GPIO.wait_for_edge(btn_pin, GPIO.FALLING)
