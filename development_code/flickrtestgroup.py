@@ -1,8 +1,19 @@
 #!/usr/bin/env python
 
 import flickr_api
-from flickr import get_album, get_group
 from datetime import datetime
+
+def get_group(group_name):
+
+	groups = flickr_api.Group.getGroups()
+
+	print groups
+
+	for g in groups:
+		if g.name == group_name:
+			return g
+
+	return None
 
 ## Load authentication handler
 
@@ -16,32 +27,12 @@ user = flickr_api.test.login()
 
 start = datetime.now()
 
-photo = flickr_api.upload(photo_file = "image01.jpg", title = "Tester", is_public=0)
+photo = flickr_api.upload(photo_file = "image01.jpg", title = "Tester")
 
 duration = datetime.now() - start
 
 print "Upload time:", duration
 
-## Add to album
-
-ALBUM = 'Test Album'
-
-### Get album
-
-start = datetime.now()
-
-album = get_album(user,ALBUM)
-
-### Add photo
-
-if album:
-	album.addPhoto(photo = photo)
-else:
-	print 'no album'
-
-duration = datetime.now() - start
-
-print "Add to album time:", duration
 
 ## Add to group
 
@@ -50,8 +41,6 @@ GROUP = 'Photoboof_test'
 ### Get group
 
 start = datetime.now()
-
-user_id = user.id
 
 group = get_group(GROUP)
 

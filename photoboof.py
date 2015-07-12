@@ -97,7 +97,7 @@ def upload_montage(file_prefix):
 
             start = datetime.now()
 
-            flickr_upload(MONTAGE_PATH + file_prefix + "_grid.jpg",album=ALBUM,title=title)
+            flickr_upload(MONTAGE_PATH + file_prefix + "_grid.jpg",album=ALBUM,title=title, group=GROUP, is_public=0)
 
             duration = datetime.now() - start
 
@@ -240,6 +240,7 @@ def batch_upload():
 # Constants
 
 ALBUM = 'Test Album'
+GROUP = 'Photoboof_test'
 EVENT = 'Event Name Goes Here'
 FILE_PATH = 'pics/'
 MONTAGE_PATH = FILE_PATH + 'montages/'
