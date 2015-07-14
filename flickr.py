@@ -36,7 +36,7 @@ def flickr_upload(photo_file, album=None, title=None, group=None, is_public=1):
 
 	## upload photo
 
-	print "Photo File:", photo_file
+	# print "Photo File:", photo_file
 
 	photo = flickr_api.upload(photo_file = photo_file , title=title, is_public=is_public)
 
