@@ -43,9 +43,9 @@ class Display :
         if not found:
             raise Exception('No suitable video driver found!')
         
-        size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
-        print "Framebuffer size: %d x %d" % (size[0], size[1])
-        self.screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+        self.size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+        print "Framebuffer size: %d x %d" % (self.size[0], self.size[1])
+        self.screen = pygame.display.set_mode(self.size, pygame.FULLSCREEN)
         # Clear the screen to start
         self.screen.fill((0, 0, 0))        
         # Initialise font support
@@ -57,11 +57,22 @@ class Display :
         "Destructor to make sure pygame shuts down, etc."
         pass 
 
+    def render_text(self,message):
+        font = pygame.font.Font(None, 60)
+        mw, mh = font.size(message)
+        text_surface = font.render(message,True, (255, 255, 255)) 
+        sw = (self.size[0]/2) - (mw/2)
+        sh = (self.size[1]/2) - (mh/2)
+        self.screen.blit(text_surface, (sw, sh))
+        # Update display
+        pygame.display.update()
+
     def show_image(self,image_file):
         # Clear the screen to start
         self.screen.fill((0, 0, 0))  
         # Render the image
         image = pygame.image.load(image_file).convert()
+        image = pygame.transform.scale(image, (self.size[0], self.size[1]))
         self.screen.blit(image, (0,0))
         # Update display
         pygame.display.update()
@@ -155,13 +166,13 @@ def upload_montage(file_prefix):
 
             duration = datetime.now() - start
 
-            # print "Upload time:", duration
+            print "Upload time:", duration
 
             mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
             os.system(mv_command)
         except:
-            # print 'Upload Failed'
-            raise
+            print 'Upload Failed'
+            # raise
 
     # else:
         # print "No connection - will upload later"
@@ -182,7 +193,7 @@ def photo_process():
 
     ## Pose coundown
     print "Pose" 
-    # TODO: Superimpose message: get your pose ready - will take 4 quick photos
+    # display.render_text('Get your pose ready \n will take 4 quick photos')
 
     led_off(ready_led)
     for runcount in range(0,5):
@@ -203,7 +214,6 @@ def photo_process():
                                          format=None, use_video_port=False, resize=None, splitter_port=0)):
                 led_off(take_led)
                 # TODO: Turn off superimposed number
-                # print(filename)
                 time.sleep(1)
                 if i == PHOTO_COUNT - 1:
                     break
@@ -216,41 +226,63 @@ def photo_process():
 
     ## Display last photo taken
     display.show_image(FILE_PATH + file_prefix + '04.jpg')
+    display.render_text('Processing, please wait')
 
     led_on(processing_led) ## LED 3 - Making montage
     print "Making montage"
 
     ## Make animated GIF
+    start = datetime.now()
     gm = "gm convert -delay " + str(GIF_DELAY) + " -loop 0 " + FILE_PATH + file_prefix + "*.jpg " + FILE_PATH + file_prefix + ".gif"
     os.system(gm) #make the .gif
+    duration = datetime.now() - start
+    print "GIF time:", duration
 
     ## Make montage with text on the side
+    start = datetime.now()
+
     # make the grid
     gm = "gm montage -tile 2x -geometry 640x480+5+5 " + FILE_PATH + file_prefix + "*.jpg " + MONTAGE_PATH + file_prefix + "_grid.jpg"
     os.system(gm) 
+
+    # Copy grid to last_grid.jpg for display
+    cp_command = 'cp ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + "last_grid.jpg" 
+    os.system(cp_command)
+
+    ## Display last grid
+    display.show_image('last_grid.jpg')
+    display.render_text('Processing, please wait')
+
     # create text box
     gm ='gm convert -size 980x170 xc:#ffffff -pointsize 60 -font Arial -fill black -draw "text 30,105 \'' + EVENT + '\'" -pointsize 16 -draw "text 850,25 \'' + file_prefix + '\'" text.jpg'
     os.system(gm) 
+
     # spin it
     gm = 'gm convert -rotate "270>" text.jpg text.jpg'
     os.system(gm) 
+
     # join text and grid
     gm = 'gm montage -geometry x980+0  text.jpg -gravity west ' + MONTAGE_PATH + file_prefix + '_grid.jpg -gravity east  -resize x980 '+ MONTAGE_PATH + file_prefix + '_grid.jpg'
     os.system(gm) 
+
     # chop off the extra
     gm = 'gm convert ' + MONTAGE_PATH + file_prefix + '_grid.jpg -crop 1470x980+1131+0 ' + MONTAGE_PATH + file_prefix + '_grid.jpg'
     os.system(gm)  
+
+    duration = datetime.now() - start
+    print "Grid time:", duration
 
     led_off(processing_led)
 
     ## Upload Montage
 
+    # print "Uploading"
     upload_montage(file_prefix)
 
     ## Finished
 
     ## Display grid
-    display.show_image(UPLOADED_PATH + file_prefix + "_grid.jpg")
+    display.show_image('last_grid.jpg')
 
     # Blink LEDs to show complete
 
@@ -264,7 +296,10 @@ def photo_process():
         sleep(0.300)
 
     print "Done"
-    # TODO: Superimpose message: Press Button to Begin
+
+    ## Display grid
+    display.show_image('last_grid.jpg')
+    display.render_text('Press Button to Begin')
 
     led_on(ready_led)
 
@@ -317,8 +352,6 @@ btn_pin = wP2board(5)
 display = Display()
 display.show_image('title.jpg')
 
-## TODO: Display title card
-
 # GPIO Setup
 
 GPIO.setwarnings(False)
@@ -341,7 +374,9 @@ if connected:
 
 print "Ready"
 led_on(ready_led)
-# TODO: Superimpose 'Press Button to Begin'
+
+display.render_text('Press Button to Begin')
+
 
 # Button loop
 
