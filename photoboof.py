@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from os import listdir
 import os
 import time
@@ -10,7 +11,7 @@ import RPi.GPIO as GPIO
 from GPIOlib import wP2board
 from time import sleep
 import urllib2
-import socket
+# import socket
 import pygame
 
 class Display :
@@ -327,6 +328,12 @@ def batch_upload():
 
         led_off(processing_led)
 
+def exit_photoboof(channel):
+    print "Closing Photoboof" 
+    led_powerup_test()
+    GPIO.cleanup()
+    sys.exit()
+
 #-----------------------------------------------------------------------------#
 # Constants
 
@@ -346,6 +353,7 @@ take_led = 2
 processing_led = 3
 flash_led = 4
 btn_pin = wP2board(5)
+btn2_pin = wP2board(6)
 
 # Power up
 
@@ -361,6 +369,10 @@ GPIO.setmode(GPIO.BOARD)
 for i in range(0,led_count):
     GPIO.setup(wP2board(i),GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(btn_pin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(btn2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
+
+# Exit program when button 2 is pushed
+GPIO.add_event_detect(btn2_pin, GPIO.FALLING, callback=exit_photoboof, bouncetime=300)
 
 led_powerup_test()
 
@@ -385,4 +397,4 @@ while True:
     sleep(0.2) #debounce
     photo_process()
 
-GPIO.cleanup()
+
