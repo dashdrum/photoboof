@@ -61,7 +61,7 @@ class Display :
     def render_text(self,message):
         font = pygame.font.Font(None, 60)
         mw, mh = font.size(message)
-        text_surface = font.render(message,True, (255, 255, 255)) 
+        text_surface = font.render(message,True, (255, 255, 0)) # Yellow Text
         sw = (self.size[0]/2) - (mw/2)
         sh = (self.size[1]/2) - (mh/2)
         self.screen.blit(text_surface, (sw, sh))
