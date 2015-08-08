@@ -13,10 +13,11 @@ from time import sleep
 import urllib2
 # import socket
 import pygame
+from random import randint
 
 class Display :
     screen = None;
-    
+
     def __init__(self):
         "Ininitializes a new pygame screen using the framebuffer"
         # Based on "Python GUI in Linux frame buffer"
@@ -24,7 +25,7 @@ class Display :
         disp_no = os.getenv("DISPLAY")
         if disp_no:
             print "I'm running under X display = {0}".format(disp_no)
-        
+
         # Check which frame buffer drivers are available
         # Start with fbcon since directfb hangs with composite output
         drivers = ['fbcon', 'directfb', 'svgalib']
@@ -40,15 +41,15 @@ class Display :
                 continue
             found = True
             break
-    
+
         if not found:
             raise Exception('No suitable video driver found!')
-        
+
         self.size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
         print "Framebuffer size: %d x %d" % (self.size[0], self.size[1])
         self.screen = pygame.display.set_mode(self.size, pygame.FULLSCREEN)
         # Clear the screen to start
-        self.screen.fill((0, 0, 0))        
+        self.screen.fill((0, 0, 0))
         # Initialise font support
         pygame.font.init()
         # Render the screen
@@ -56,7 +57,7 @@ class Display :
 
     def __del__(self):
         "Destructor to make sure pygame shuts down, etc."
-        pass 
+        pass
 
     def render_text(self,message):
         font = pygame.font.Font(None, 60)
@@ -70,7 +71,7 @@ class Display :
 
     def show_image(self,image_file):
         # Clear the screen to start
-        self.screen.fill((0, 0, 0))  
+        self.screen.fill((0, 0, 0))
         # Render the image
         image = pygame.image.load(image_file).convert()
         image = pygame.transform.scale(image, (self.size[0], self.size[1]))
@@ -103,26 +104,6 @@ def led_powerup_test():
             led_off(i)
         sleep(0.300)
 
-    # for runcount in range(0,3):
-
-    #     for i in range(0,led_count):  ## 0 to led_count-1
-    #         led_on(i)
-    #         sleep(0.100)
-    #         led_off(i)
-    #         sleep(0.100)
-
-
-    # for runcount in range(0,3):
-
-    #     for i in range(0,led_count):  ## 0 to led_count-1
-    #         led_on(i)
-    #         sleep(0.100)
-    #         led_off(i)
-    #     for i in range(led_count-1,-1,-1): ## led_count-1 to 0
-    #         led_on(i)
-    #         sleep(0.100)
-    #         led_off(i)
-
     for runcount in range(0,3):
 
         for i in range(0,led_count):  ## 0 to led_count-1
@@ -131,14 +112,14 @@ def led_powerup_test():
         for i in range(led_count-1,-1,-1): ## led_count-1 to 0
             led_off(i)
         sleep(0.300)
-      
+
 def is_connected():
   try:
     urllib2.urlopen("http://www.google.com").close()
     return True
   except:
      pass
-  return False  
+  return False
 
 def upload_montage(file_prefix):
 
@@ -156,7 +137,7 @@ def upload_montage(file_prefix):
                 title = datetime(year=int(file_prefix[0:4]),
                                  month=int(file_prefix[4:6]),
                                  day=int(file_prefix[6:8]),
-                                 hour=int(file_prefix[8:10]), 
+                                 hour=int(file_prefix[8:10]),
                                  minute=int(file_prefix[10:12])).strftime('%B %d, %Y %I:%M %p')
             except:
                 title=file_prefix
@@ -169,7 +150,7 @@ def upload_montage(file_prefix):
 
             print "Upload time:", duration
 
-            mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg" 
+            mv_command = 'mv ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + UPLOADED_PATH + file_prefix + "_grid.jpg"
             os.system(mv_command)
         except:
             print 'Upload Failed'
@@ -178,13 +159,15 @@ def upload_montage(file_prefix):
     # else:
         # print "No connection - will upload later"
 
-    led_off(processing_led)  
+    led_off(processing_led)
 
-def photo_process():
+def photo_process(channel):
+
+    hold_show = True
 
     ## Camera setup
     camera = picamera.PiCamera()
-    camera.resolution = (640,480) 
+    camera.resolution = (640,480)
     #camera.resolution = (2592,1944)
     #camera.vflip = True
     #camera.hflip = True
@@ -193,7 +176,7 @@ def photo_process():
     led_on(flash_led)
 
     ## Pose coundown
-    print "Pose" 
+    print "Pose"
     # display.render_text('Get your pose ready \n will take 4 quick photos')
 
     led_off(ready_led)
@@ -207,11 +190,11 @@ def photo_process():
     ## Taking photos
     print "Take Photos"
     file_prefix = time.strftime("%Y%m%d%H%M%S")
-    led_on(take_led)  
+    led_on(take_led)
     # TODO: Superimpose '1'
     with camera:
         try:
-            for i, filename in enumerate(camera.capture_continuous(FILE_PATH + file_prefix + '{counter:02d}.jpg', 
+            for i, filename in enumerate(camera.capture_continuous(FILE_PATH + file_prefix + '{counter:02d}.jpg',
                                          format=None, use_video_port=False, resize=None, splitter_port=0)):
                 led_off(take_led)
                 # TODO: Turn off superimposed number
@@ -244,10 +227,10 @@ def photo_process():
 
     # make the grid
     gm = "gm montage -tile 2x -geometry 640x480+5+5 " + FILE_PATH + file_prefix + "*.jpg " + MONTAGE_PATH + file_prefix + "_grid.jpg"
-    os.system(gm) 
+    os.system(gm)
 
     # Copy grid to last_grid.jpg for display
-    cp_command = 'cp ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + "last_grid.jpg" 
+    cp_command = 'cp ' + MONTAGE_PATH + file_prefix + "_grid.jpg " + "last_grid.jpg"
     os.system(cp_command)
 
     ## Display last grid
@@ -256,19 +239,19 @@ def photo_process():
 
     # create text box
     gm ='gm convert -size 980x170 xc:#ffffff -pointsize 60 -font Arial -fill black -draw "text 30,105 \'' + EVENT + '\'" -pointsize 16 -draw "text 850,25 \'' + file_prefix + '\'" text.jpg'
-    os.system(gm) 
+    os.system(gm)
 
     # spin it
     gm = 'gm convert -rotate "270>" text.jpg text.jpg'
-    os.system(gm) 
+    os.system(gm)
 
     # join text and grid
     gm = 'gm montage -geometry x980+0  text.jpg -gravity west ' + MONTAGE_PATH + file_prefix + '_grid.jpg -gravity east  -resize x980 '+ MONTAGE_PATH + file_prefix + '_grid.jpg'
-    os.system(gm) 
+    os.system(gm)
 
     # chop off the extra
     gm = 'gm convert ' + MONTAGE_PATH + file_prefix + '_grid.jpg -crop 1470x980+1131+0 ' + MONTAGE_PATH + file_prefix + '_grid.jpg'
-    os.system(gm)  
+    os.system(gm)
 
     duration = datetime.now() - start
     print "Grid time:", duration
@@ -303,6 +286,7 @@ def photo_process():
     display.render_text('Press Button to Begin')
 
     led_on(ready_led)
+    hold_show = False
 
 def batch_upload():
     jpg_count =0
@@ -329,7 +313,7 @@ def batch_upload():
         led_off(processing_led)
 
 def exit_photoboof(channel):
-    print "Closing Photoboof" 
+    print "Closing Photoboof"
     led_powerup_test()
     GPIO.cleanup()
     sys.exit()
@@ -343,7 +327,7 @@ EVENT = 'Event Name Goes Here'
 FILE_PATH = 'pics/'
 MONTAGE_PATH = FILE_PATH + 'montages/'
 UPLOADED_PATH = FILE_PATH + 'uploaded/'
-GIF_DELAY = 50 
+GIF_DELAY = 50
 PHOTO_COUNT = 4
 
 led_count = 5
@@ -354,6 +338,8 @@ processing_led = 3
 flash_led = 4
 btn_pin = wP2board(5)
 btn2_pin = wP2board(6)
+
+hold_show = False
 
 # Power up
 
@@ -369,10 +355,11 @@ GPIO.setmode(GPIO.BOARD)
 for i in range(0,led_count):
     GPIO.setup(wP2board(i),GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(btn_pin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(btn2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) 
+GPIO.setup(btn2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Exit program when button 2 is pushed
 GPIO.add_event_detect(btn2_pin, GPIO.FALLING, callback=exit_photoboof, bouncetime=300)
+GPIO.add_event_detect(btn_pin, GPIO.FALLING, callback=photo_process, bouncetime=300)
 
 led_powerup_test()
 
@@ -390,11 +377,29 @@ led_on(ready_led)
 display.render_text('Press Button to Begin')
 
 
-# Button loop
+# Main loop
 
 while True:
-    GPIO.wait_for_edge(btn_pin, GPIO.FALLING)
-    sleep(0.2) #debounce
-    photo_process()
+
+    ## Load filename array
+    jpg_count =0
+    jpg_list = []
+
+    for e in listdir(FILE_PATH):
+        if e.endswith('jpg'):
+            jpg_count += 1
+            jpg_list.append(e)
+
+    ## Display 100 random pics
+    if jpg_count > 0:
+        for j in range(0,100):
+            if not hold_show:
+                f = 'pics/' + jpg_list[randint(0,jpg_count-1)]
+                try:
+                    display.show_image(f)
+                except:
+                    pass
+                display.render_text('Press Button to Begin')
+                sleep(3.000)
 
 
