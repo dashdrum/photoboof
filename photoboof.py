@@ -121,6 +121,19 @@ def is_connected():
      pass
   return False
 
+def set_screen_available(status):
+    if status:
+        if os.path.isfile('block_slide_show'):
+            os.remove('block_slide_show')
+    else:
+        open('block_slide_show','w+').close()
+
+def screen_available():
+    if os.path.isfile('block_slide_show'):
+        return False
+    else:
+        return True
+
 def upload_montage(file_prefix):
 
     led_on(processing_led)  ## LED 4 - uploading
@@ -163,7 +176,7 @@ def upload_montage(file_prefix):
 
 def photo_process(channel):
 
-    hold_show = True
+    set_screen_available(False)
 
     ## Camera setup
     camera = picamera.PiCamera()
@@ -172,6 +185,8 @@ def photo_process(channel):
     #camera.vflip = True
     #camera.hflip = True
     camera.saturation = 0
+    camera.brightness = 80
+    camera.contrast = 50
     camera.start_preview()
     led_on(flash_led)
 
@@ -185,7 +200,7 @@ def photo_process(channel):
         led_on(pose_led)
         sleep(0.300)
         led_off(pose_led)
-        sleep(0.300)
+        sleep(0.200)
 
     ## Taking photos
     print "Take Photos"
@@ -198,7 +213,7 @@ def photo_process(channel):
                                          format=None, use_video_port=False, resize=None, splitter_port=0)):
                 led_off(take_led)
                 # TODO: Turn off superimposed number
-                time.sleep(1)
+                time.sleep(2)
                 if i == PHOTO_COUNT - 1:
                     break
                 led_on(take_led)
@@ -215,12 +230,12 @@ def photo_process(channel):
     led_on(processing_led) ## LED 3 - Making montage
     print "Making montage"
 
-    ## Make animated GIF
-    start = datetime.now()
-    gm = "gm convert -delay " + str(GIF_DELAY) + " -loop 0 " + FILE_PATH + file_prefix + "*.jpg " + FILE_PATH + file_prefix + ".gif"
-    os.system(gm) #make the .gif
-    duration = datetime.now() - start
-    print "GIF time:", duration
+    # ## Make animated GIF
+    # start = datetime.now()
+    # gm = "gm convert -delay " + str(GIF_DELAY) + " -loop 0 " + FILE_PATH + file_prefix + "*.jpg " + FILE_PATH + file_prefix + ".gif"
+    # os.system(gm) #make the .gif
+    # duration = datetime.now() - start
+    # print "GIF time:", duration
 
     ## Make montage with text on the side
     start = datetime.now()
@@ -286,7 +301,7 @@ def photo_process(channel):
     display.render_text('Press Button to Begin')
 
     led_on(ready_led)
-    hold_show = False
+    set_screen_available(True)
 
 def batch_upload():
     jpg_count =0
@@ -321,9 +336,9 @@ def exit_photoboof(channel):
 #-----------------------------------------------------------------------------#
 # Constants
 
-ALBUM = 'Test Album'
-GROUP = 'Photoboof_test'
-EVENT = 'Event Name Goes Here'
+ALBUM = 'Dawnapadrewza 8'
+GROUP = 'Dawnapadrewza2015'
+EVENT = 'Dawn-A-Pa-Drew-Za #8 - 2015'
 FILE_PATH = 'pics/'
 MONTAGE_PATH = FILE_PATH + 'montages/'
 UPLOADED_PATH = FILE_PATH + 'uploaded/'
@@ -339,12 +354,19 @@ flash_led = 4
 btn_pin = wP2board(5)
 btn2_pin = wP2board(6)
 
-hold_show = False
+set_screen_available(True)
 
 # Power up
 
 display = Display()
-display.show_image('title.jpg')
+display.show_image('splash1.png')
+sleep(1.000)
+display.show_image('splash2.png')
+sleep(1.000)
+display.show_image('splash3.png')
+sleep(1.000)
+display.show_image('splash4.png')
+sleep(1.000)
 
 # GPIO Setup
 
@@ -359,11 +381,12 @@ GPIO.setup(btn2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Exit program when button 2 is pushed
 GPIO.add_event_detect(btn2_pin, GPIO.FALLING, callback=exit_photoboof, bouncetime=300)
+# Run photo process when big button is pushed
 GPIO.add_event_detect(btn_pin, GPIO.FALLING, callback=photo_process, bouncetime=300)
 
 led_powerup_test()
 
-# Check for pending uploads
+# Check for pending
 
 connected = is_connected()
 if connected:
@@ -393,7 +416,7 @@ while True:
     ## Display 100 random pics
     if jpg_count > 0:
         for j in range(0,100):
-            if not hold_show:
+            if screen_available():
                 f = 'pics/' + jpg_list[randint(0,jpg_count-1)]
                 try:
                     display.show_image(f)
