@@ -64,7 +64,7 @@ class Display :
         mw, mh = font.size(message)
         text_surface = font.render(message,True, (255, 255, 0)) # Yellow Text
         sw = (self.size[0]/2) - (mw/2)
-        sh = (self.size[1]/2) - (mh/2)
+        sh = (self.size[1]/2) - (mh/2) - 20
         self.screen.blit(text_surface, (sw, sh))
         # Update display
         pygame.display.update()
@@ -121,19 +121,6 @@ def is_connected():
      pass
   return False
 
-def set_screen_available(status):
-    if status:
-        if os.path.isfile('block_slide_show'):
-            os.remove('block_slide_show')
-    else:
-        open('block_slide_show','w+').close()
-
-def screen_available():
-    if os.path.isfile('block_slide_show'):
-        return False
-    else:
-        return True
-
 def upload_montage(file_prefix):
 
     led_on(processing_led)  ## LED 4 - uploading
@@ -176,8 +163,6 @@ def upload_montage(file_prefix):
 
 def photo_process(channel):
 
-    set_screen_available(False)
-
     ## Camera setup
     camera = picamera.PiCamera()
     camera.resolution = (640,480)
@@ -185,8 +170,8 @@ def photo_process(channel):
     #camera.vflip = True
     #camera.hflip = True
     camera.saturation = 0
-    camera.brightness = 80
-    camera.contrast = 50
+    # camera.brightness = 80
+    # camera.contrast = 50
     camera.start_preview()
     led_on(flash_led)
 
@@ -225,7 +210,7 @@ def photo_process(channel):
 
     ## Display last photo taken
     display.show_image(FILE_PATH + file_prefix + '04.jpg')
-    display.render_text('Processing, please wait')
+    display.render_text('Processing - Please Wait')
 
     led_on(processing_led) ## LED 3 - Making montage
     print "Making montage"
@@ -250,7 +235,7 @@ def photo_process(channel):
 
     ## Display last grid
     display.show_image('last_grid.jpg')
-    display.render_text('Processing, please wait')
+    display.render_text('Processing - Please Wait')
 
     # create text box
     gm ='gm convert -size 980x170 xc:#ffffff -pointsize 60 -font Arial -fill black -draw "text 30,105 \'' + EVENT + '\'" -pointsize 16 -draw "text 850,25 \'' + file_prefix + '\'" text.jpg'
@@ -280,8 +265,9 @@ def photo_process(channel):
 
     ## Finished
 
-    ## Display grid
-    display.show_image('last_grid.jpg')
+    ## Show splash
+    display.show_image('splash4.png')
+    display.render_text('Processing - Please Wait')
 
     # Blink LEDs to show complete
 
@@ -296,12 +282,11 @@ def photo_process(channel):
 
     print "Done"
 
-    ## Display grid
-    display.show_image('last_grid.jpg')
+    ## Display ready message over splash
+    display.show_image('splash4.png')
     display.render_text('Press Button to Begin')
 
     led_on(ready_led)
-    set_screen_available(True)
 
 def batch_upload():
     jpg_count =0
@@ -336,9 +321,9 @@ def exit_photoboof(channel):
 #-----------------------------------------------------------------------------#
 # Constants
 
-ALBUM = 'Dawnapadrewza 8'
-GROUP = 'Dawnapadrewza2015'
-EVENT = 'Dawn-A-Pa-Drew-Za #8 - 2015'
+ALBUM = None
+GROUP = None
+EVENT = 'Just Having Photoboof Phun'
 FILE_PATH = 'pics/'
 MONTAGE_PATH = FILE_PATH + 'montages/'
 UPLOADED_PATH = FILE_PATH + 'uploaded/'
@@ -353,8 +338,6 @@ processing_led = 3
 flash_led = 4
 btn_pin = wP2board(5)
 btn2_pin = wP2board(6)
-
-set_screen_available(True)
 
 # Power up
 
@@ -381,8 +364,6 @@ GPIO.setup(btn2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Exit program when button 2 is pushed
 GPIO.add_event_detect(btn2_pin, GPIO.FALLING, callback=exit_photoboof, bouncetime=300)
-# Run photo process when big button is pushed
-GPIO.add_event_detect(btn_pin, GPIO.FALLING, callback=photo_process, bouncetime=300)
 
 led_powerup_test()
 
@@ -413,16 +394,28 @@ while True:
             jpg_count += 1
             jpg_list.append(e)
 
+    ## Detect button press
+    GPIO.add_event_detect(btn_pin, GPIO.FALLING, bouncetime=300)
+
     ## Display 100 random pics
-    if jpg_count > 0:
-        for j in range(0,100):
-            if screen_available():
-                f = 'pics/' + jpg_list[randint(0,jpg_count-1)]
-                try:
-                    display.show_image(f)
-                except:
-                    pass
-                display.render_text('Press Button to Begin')
-                sleep(3.000)
+
+    for j in range(0,100):
+        ## If we found pics, display one at random
+        if jpg_count > 0:
+            f = 'pics/' + jpg_list[randint(0,jpg_count-1)]
+            try:
+                display.show_image(f)
+            except:
+                pass
+            display.render_text('Press Button to Begin')
+        ## Sleep for 3 seconds while checking for a button press
+        for s in range(0,300):
+            if GPIO.event_detected(btn_pin):
+                photo_process(btn_pin)
+                ## Kill event detect and start a fresh one
+                GPIO.remove_event_detect(btn_pin)
+                GPIO.add_event_detect(btn_pin, GPIO.FALLING, bouncetime=300)
+            sleep(0.010)
+
 
 
